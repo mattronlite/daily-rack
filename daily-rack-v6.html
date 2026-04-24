@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daily Rack">
+<meta name="theme-color" id="tc" content="#F2F2F7">
+<title>Daily Rack</title>
+<style>
+/* TOKENS */
+:root {
+  --bg:#F0F0F5; --card:#FFFFFF; --card2:#F7F7FA; --card3:#EEEEF3;
+  --sep:rgba(60,60,67,.2); --sep2:rgba(60,60,67,.1);
+  --t1:#1A1A1C; --t2:#3A3A3F; --t3:rgba(60,60,67,.58); --t4:rgba(60,60,67,.28); --t5:rgba(60,60,67,.13);
+  --green:#28C75A; --green-d:rgba(40,199,90,.12);
+  --blue:#0071E3;  --blue-d:rgba(0,113,227,.11);
+  --orange:#F59500; --orange-d:rgba(245,149,0,.12);
+  --red:#FF3B30;   --red-d:rgba(255,59,48,.1);
+  --teal:#00A693; --teal-d:rgba(0,166,147,.12);
+  --indigo:#5856D6; --indigo-d:rgba(88,86,214,.11);
+  --freq-bg:#E8E8ED; --freq-fg:#56565C;
+  --cond-bg:#D9ECFF; --cond-fg:#0060C7;
+  --caut-bg:#FFF0D9; --caut-fg:#B86B00;
+  --step-bg:#D9F5E8; --step-fg:#157040;
+  --accent-morning: #FF7A00;
+  --accent-midday:  #28A745;
+  --accent-evening: #5856D6;
+  --accent-bed:     #0071E3;
+  --r:12px; --r-lg:16px;
+  --sat:env(safe-area-inset-top,44px);
+  --sab:env(safe-area-inset-bottom,34px);
+  --font:-apple-system,"SF Pro Text","Helvetica Neue",sans-serif;
+  --font-d:-apple-system,"SF Pro Display","Helvetica Neue",sans-serif;
+  --font-m:"SF Mono",ui-monospace,monospace;
+}
+[data-theme="dark"] {
+  --bg:#0A0A0C; --card:#1A1A1E; --card2:#242428; --card3:#2E2E34;
+  --sep:rgba(84,84,88,.48); --sep2:rgba(84,84,88,.22);
+  --t1:#F5F5F7; --t2:#E0E0E8; --t3:rgba(235,235,245,.58); --t4:rgba(235,235,245,.26); --t5:rgba(235,235,245,.1);
+  --green:#2ED158; --green-d:rgba(46,209,88,.16);
+  --blue:#2196FF;  --blue-d:rgba(33,150,255,.16);
+  --orange:#FF9F0A; --orange-d:rgba(255,159,10,.16);
+  --red:#FF453A;   --red-d:rgba(255,69,58,.14);
+  --teal:#2FC8B8; --teal-d:rgba(47,200,184,.15);
+  --indigo:#7A78FF; --indigo-d:rgba(122,120,255,.15);
+  --freq-bg:#2E2E34; --freq-fg:#AEAEB6;
+  --cond-bg:#08203A; --cond-fg:#5AAAFF;
+  --caut-bg:#302000; --caut-fg:#FFAA30;
+  --step-bg:#082A18; --step-fg:#2ED158;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--t1);font-family:var(--font);-webkit-font-smoothing:antialiased}
+
+/* SHELL */
+#app{display:flex;flex-direction:column;height:100%;height:-webkit-fill-available;background:var(--bg)}
+
+/* HEADER */
+.hdr{flex-shrink:0;padding-top:var(--sat);background:var(--bg)}
+.hdr-top{display:flex;align-items:center;justify-content:flex-end;padding:0 16px;height:46px;gap:8px}
+
+.hdr-btn{width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;
+  background:var(--card);color:var(--t3);font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 4px rgba(0,0,0,.1),0 .5px 1px rgba(0,0,0,.06);
+  transition:opacity .1s,transform .12s}
+.hdr-btn:active{opacity:.5;transform:scale(.9)}
+
+/* SEGMENTED CONTROL */
+.seg-wrap{flex-shrink:0;padding:0 16px 12px;background:var(--bg)}
+.segmented{display:flex;gap:2px;background:rgba(118,118,128,.11);border-radius:11px;padding:2px}
+.seg-btn{flex:1;border:none;cursor:pointer;padding:8px 0;border-radius:9px;font-family:var(--font);
+  font-size:13px;font-weight:600;color:var(--t3);background:transparent;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:all .22s cubic-bezier(.34,1.56,.64,1);letter-spacing:-.1px}
+.seg-btn.active{background:var(--card);
+  box-shadow:0 1px 5px rgba(0,0,0,.11),0 .5px 1.5px rgba(0,0,0,.07)}
+[data-theme="dark"] .seg-btn.active{box-shadow:0 1px 5px rgba(0,0,0,.45)}
+/* Supplements active = blue, skincare active = teal */
+#seg-s.active{color:var(--blue)}
+#seg-k.active{color:var(--teal)}
+
+/* 
+   DAY STRIP
+   Ring: r=12, circumference = 2π×12 ≈ 75.40
+   Gradient achieved via linearGradient in SVG defs (injected via JS)
+ */
+.day-strip-outer{flex-shrink:0;background:var(--bg);border-bottom:.5px solid var(--sep2);padding:0 0 10px}
+.day-strip{display:flex;justify-content:center;align-items:flex-end;padding:0 6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.day-strip::-webkit-scrollbar{display:none}
+
+.dc{flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:6px 4px 4px;border-radius:14px;min-width:42px;transition:all .25s cubic-bezier(.34,1.56,.64,1);cursor:pointer}
+.dc:active{opacity:.6}
+
+.dc-dow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t4);margin-bottom:4px;transition:color .25s}
+
+/* SVG ring — arc builds as progress, sits outside the inner circle */
+.dc-ring{position:relative;width:36px;height:36px}
+.dc-ring svg{position:absolute;top:0;left:0;transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:var(--sep2);stroke-width:2.5}
+.ring-prog{fill:none;stroke-width:2.5;stroke-linecap:round;
+  stroke-dasharray:87.96;stroke-dashoffset:87.96;
+  transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1)}
+
+/* Number sits centered inside — smaller than arc diameter so arc shows clearly */
+.dc-inner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.dc-circle{width:24px;height:24px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:transparent}
+
+/* Text — always neutral, never changes */
+.dc-num{font-size:13px;font-weight:400;line-height:1;color:var(--t3)}
+.dc-dow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--t4);margin-bottom:4px}
+
+/* TODAY: just bold the number, no circle fill */
+.dc.today .dc-num{color:var(--t1);font-weight:700}
+.dc.today .dc-dow{color:var(--t2)}
+
+/* ring-done: arc completes full circle, circle NEVER changes */
+
+/* Test mode per-day reset button */
+.dc-reset{position:absolute;top:-4px;right:-4px;width:16px;height:16px;
+  border-radius:50%;background:var(--red);color:#fff;
+  font-size:9px;font-weight:700;display:none;
+  align-items:center;justify-content:center;
+  border:none;cursor:pointer;line-height:1;
+  box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.test-mode .dc-reset{display:flex}
+.prog-strip{flex-shrink:0;padding:10px 16px 8px;display:flex;align-items:center;gap:10px;background:var(--bg)}
+.prog-track{flex:1;height:5px;background:var(--card3);border-radius:3px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.06)}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--blue) 0%,var(--teal) 50%,var(--green) 100%);border-radius:3px;transition:width .55s cubic-bezier(.34,1.2,.64,1)}
+.prog-label{font-size:12px;font-weight:600;color:var(--t4);min-width:38px;text-align:right;font-family:var(--font-m);font-variant-numeric:tabular-nums}
+
+/* LIST SCROLL */
+.list-scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:14px 16px calc(20px + var(--sab))}
+.list-scroll::-webkit-scrollbar{display:none}
+
+/* SECTION GROUP */
+.grp{margin-bottom:28px}
+.grp-hdr{padding:0 2px 10px}
+.grp-hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.grp-lbl-main{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t2)}
+.grp-count{font-size:11px;font-weight:600;color:var(--t4);font-family:var(--font-m);
+  background:var(--card3);padding:2px 8px;border-radius:20px;letter-spacing:.02em}
+.grp-count.done{color:var(--green);background:var(--green-d)}
+/* Gradient rule: full width, fades left→right from session color to transparent */
+.grp-rule{height:2px;border-radius:1px;border:none;margin:0}
+.grp-card{background:var(--card);border-radius:var(--r-lg);overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,.07),0 .5px 1px rgba(0,0,0,.04)}
+[data-theme="dark"] .grp-card{box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px rgba(0,0,0,.3)}
+@keyframes grpFlash{0%{background:var(--card)}35%{background:var(--green-d)}100%{background:var(--card)}}
+.grp-card.flash{animation:grpFlash .65s ease-out}
+
+/* STEP ROW */
+.srow{display:flex;align-items:flex-start;gap:13px;padding:14px 16px;border-bottom:.5px solid var(--sep2);position:relative;min-height:60px;transition:background .12s}
+.srow:last-child{border-bottom:none}
+.srow.tappable{cursor:pointer}
+.srow.tappable:active{background:rgba(0,0,0,.025)}
+[data-theme="dark"] .srow.tappable:active{background:rgba(255,255,255,.035)}
+.srow.is-checked{background:var(--card2)}
+.srow.is-checked::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--green)}
+.srow.is-locked-seq{opacity:.35;cursor:default}
+.srow.is-view-locked{opacity:.48;cursor:default}
+
+/* Check circle */
+.sc{width:26px;height:26px;border-radius:50%;flex-shrink:0;margin-top:2px;
+  border:1.5px solid var(--sep);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .22s cubic-bezier(.34,1.56,.64,1);background:transparent}
+.srow.is-checked .sc{background:var(--green);border-color:var(--green);box-shadow:0 0 0 4px var(--green-d)}
+.srow.is-locked-seq .sc{border-color:var(--sep2);background:var(--card3)}
+.srow.is-doing .sc{border-color:var(--orange);background:var(--orange-d)}
+
+.sc-tick{opacity:0;transform:scale(.3);transition:all .22s cubic-bezier(.34,1.56,.64,1)}
+.srow.is-checked .sc-tick{opacity:1;transform:scale(1)}
+
+@keyframes checkUnlock{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.3);opacity:1}100%{transform:scale(1);opacity:1}}
+.sc-tick.pulse{animation:checkUnlock .4s cubic-bezier(.34,1.56,.64,1) forwards}
+
+/* Row body */
+.sb{flex:1;min-width:0}
+.sb-name{font-size:15px;font-weight:500;letter-spacing:-.25px;color:var(--t1);line-height:1.3;margin-bottom:2px}
+.srow.is-checked .sb-name{color:var(--t4);text-decoration:line-through;text-decoration-color:var(--t4)}
+.sb-sub{font-size:12px;color:var(--t3);line-height:1.4;margin-top:2px}
+.sb-badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;letter-spacing:.03em;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.bf{background:var(--freq-bg);color:var(--freq-fg)}
+.bc{background:var(--cond-bg);color:var(--cond-fg)}
+.bw{background:var(--caut-bg);color:var(--caut-fg)}
+.bs{background:var(--step-bg);color:var(--step-fg)}
+
+.srow-info{width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;flex-shrink:0;
+  background:var(--card3);color:var(--t4);
+  display:flex;align-items:center;justify-content:center;font-size:13px;
+  margin-top:2px;transition:opacity .1s}
+.srow-info:active{opacity:.5}
+
+/* DO-TIMER BLOCK */
+.do-block{margin-top:8px;padding:10px 12px;background:var(--orange-d);border-radius:var(--r);display:flex;align-items:center;gap:10px}
+.do-countdown{font-size:22px;font-weight:700;font-family:var(--font-m);color:var(--orange);min-width:44px;font-variant-numeric:tabular-nums}
+.do-label{font-size:12px;color:var(--orange);flex:1;line-height:1.3}
+.do-skip{font-size:11px;font-weight:600;color:var(--t3);background:var(--card2);border:none;cursor:pointer;padding:5px 10px;border-radius:8px}
+.do-skip:active{opacity:.6}
+.do-start-btn{padding:9px 16px;border-radius:50px;border:none;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:700;background:var(--orange);color:#fff;box-shadow:0 2px 8px rgba(255,149,0,.35);white-space:nowrap;transition:all .15s}
+.do-start-btn:active{transform:scale(.95)}
+
+/* WAIT CONNECTOR */
+.wcon{background:var(--card2);border-bottom:.5px solid var(--sep2);position:relative}
+.wcon-track{position:absolute;left:37px;top:0;bottom:0;width:2px;background:var(--sep2)}
+.wcon-inner{display:flex;align-items:center;gap:10px;padding:7px 16px 7px 50px}
+.wcon-lbl{font-size:12px;color:var(--t3);flex:1;line-height:1.3}
+.wcon-lbl strong{color:var(--t2);font-weight:600}
+.wcon-pill{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;border:none}
+.wcon-pill.waiting{background:var(--orange-d)}
+.wcon-pill.done{background:var(--green-d)}
+.wcon-pill.pending{background:var(--card3)}
+.wcon-icon{font-size:12px}
+.wcon-txt{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.wcon-pill.waiting .wcon-txt{color:var(--orange)}
+.wcon-pill.done .wcon-txt{color:var(--green)}
+.wcon-pill.pending .wcon-txt{color:var(--t4)}
+
+/* STREAK BADGE */
+.streak-pill{display:inline-flex;align-items:center;gap:3px;
+  font-size:10px;font-weight:700;letter-spacing:.01em;
+  color:var(--orange);background:var(--orange-d);
+  padding:2px 7px;border-radius:20px;white-space:nowrap}
+.streak-pill.is-best{color:var(--green);background:var(--green-d)}
+.streak-pill.is-one{color:var(--t4);background:var(--card3)}
+
+/* DAY SUMMARY SHEET (past / future) */
+.summary-ov{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,.4);backdrop-filter:blur(6px) saturate(180%);opacity:0;pointer-events:none;transition:opacity .25s}
+.summary-ov.open{opacity:1;pointer-events:all}
+.summary-sheet{position:absolute;bottom:0;left:0;right:0;background:var(--bg);border-radius:20px 20px 0 0;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1);max-height:88vh;overflow-y:auto;padding-bottom:calc(16px + var(--sab))}
+.summary-ov.open .summary-sheet{transform:translateY(0)}
+.sum-handle{width:36px;height:4px;border-radius:2px;background:var(--sep);margin:10px auto 0}
+.sum-hdr{padding:16px 20px 12px;border-bottom:.5px solid var(--sep2);display:flex;align-items:center;gap:12px}
+.sum-day-circle{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px;font-weight:700}
+.sum-day-circle.past{background:var(--green-d);color:var(--green)}
+.sum-day-circle.future{background:var(--blue-d);color:var(--blue)}
+.sum-hdr-text{}
+.sum-hdr-title{font-size:18px;font-weight:700;letter-spacing:-.3px;color:var(--t1)}
+.sum-hdr-sub{font-size:12px;color:var(--t3);margin-top:2px}
+.sum-close-btn{margin-left:auto;width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;background:var(--card3);color:var(--t3);font-size:14px;display:flex;align-items:center;justify-content:center}
+.sum-close-btn:active{opacity:.6}
+.sum-body{padding:14px 16px}
+
+/* Summary item rows */
+.sum-grp{margin-bottom:22px}
+.sum-grp-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);padding:0 4px 7px;display:flex;align-items:center;gap:6px}
+.sum-card{background:var(--card);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.sum-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:.5px solid var(--sep2)}
+.sum-row:last-child{border-bottom:none}
+.sum-dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px}
+.sum-dot.done{background:var(--green-d);color:var(--green)}
+.sum-dot.missed{background:var(--card3);color:var(--t4)}
+.sum-dot.upcoming{background:var(--blue-d);color:var(--blue)}
+.sum-row-name{font-size:14px;color:var(--t1);flex:1}
+.sum-row-name.missed{color:var(--t4);text-decoration:line-through;text-decoration-color:var(--t4)}
+.sum-row-name.upcoming{color:var(--t3)}
+.sum-stats{margin:0 16px 16px;padding:12px 14px;background:var(--card);border-radius:var(--r-lg);display:flex;gap:0}
+.sum-stat{flex:1;text-align:center}
+.sum-stat-num{font-size:22px;font-weight:700;color:var(--t1);font-family:var(--font-m)}
+.sum-stat-lbl{font-size:11px;color:var(--t3);margin-top:2px;text-transform:uppercase;letter-spacing:.05em}
+.sum-stat+.sum-stat{border-left:.5px solid var(--sep2)}
+
+/* COMPLETION BANNER + PARTICLES */
+.complete-banner{position:fixed;top:calc(var(--sat) + 6px);left:16px;right:16px;z-index:500;pointer-events:none}
+.cb-inner{background:var(--green);color:#fff;padding:13px 18px;border-radius:var(--r-lg);display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(52,199,89,.4);transform:translateY(-120px);opacity:0;transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s}
+.cb-inner.show{transform:translateY(0);opacity:1}
+.cb-icon{font-size:22px}
+.cb-text{font-size:15px;font-weight:700}
+.cb-sub{font-size:12px;opacity:.85;margin-top:1px}
+.particles{position:fixed;inset:0;z-index:499;pointer-events:none;overflow:hidden}
+.particle{position:absolute;width:7px;height:7px;border-radius:50%;opacity:0}
+@keyframes particleFly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}}
+
+/* DETAIL SHEET */
+.overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.4);backdrop-filter:blur(6px) saturate(180%);opacity:0;pointer-events:none;transition:opacity .25s}
+.overlay.open{opacity:1;pointer-events:all}
+.sheet{position:absolute;bottom:0;left:0;right:0;background:var(--card);border-radius:20px 20px 0 0;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1);max-height:80vh;overflow-y:auto;padding-bottom:calc(16px + var(--sab))}
+.overlay.open .sheet{transform:translateY(0)}
+.sh-handle{width:36px;height:4px;border-radius:2px;background:var(--sep);margin:10px auto 0}
+.sh-hero{padding:16px 20px 14px;border-bottom:.5px solid var(--sep2)}
+.sh-title{font-size:18px;font-weight:700;letter-spacing:-.3px;color:var(--t1)}
+.sh-sub{font-size:13px;color:var(--t3);margin-top:2px}
+.sh-body{padding:14px 20px}
+.sh-block{padding:11px 14px;border-radius:var(--r);margin-bottom:8px;display:flex;align-items:flex-start;gap:10px}
+.sh-block.dur{background:var(--blue-d)}
+.sh-block.wt{background:var(--orange-d)}
+.sh-block.nt{background:var(--card2)}
+.sh-bicon{font-size:18px;flex-shrink:0;margin-top:1px}
+.sh-blabel{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);margin-bottom:3px}
+.sh-btext{font-size:14px;color:var(--t2);line-height:1.5}
+.sh-note{font-size:15px;color:var(--t2);line-height:1.6}
+.sh-close{display:block;width:calc(100% - 40px);margin:6px 20px 0;padding:14px;border:none;border-radius:var(--r-lg);background:var(--blue);color:#fff;font-size:16px;font-weight:600;cursor:pointer;transition:opacity .1s}
+.sh-close:active{opacity:.8}
+
+/* SETTINGS SHEET */
+.set-ov{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.4);backdrop-filter:blur(6px) saturate(180%);opacity:0;pointer-events:none;transition:opacity .25s}
+.set-ov.open{opacity:1;pointer-events:all}
+.set-sheet{position:absolute;bottom:0;left:0;right:0;background:var(--bg);border-radius:20px 20px 0 0;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1);max-height:92vh;overflow-y:auto;padding-bottom:calc(16px + var(--sab))}
+.set-ov.open .set-sheet{transform:translateY(0)}
+.set-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:.5px solid var(--sep2)}
+.set-title{font-size:18px;font-weight:700;letter-spacing:-.3px}
+.set-done{font-size:16px;font-weight:600;color:var(--blue);background:none;border:none;cursor:pointer;padding:4px 0}
+.set-done:active{opacity:.6}
+.set-sec-lbl{padding:20px 20px 6px;font-size:12px;font-weight:400;text-transform:uppercase;letter-spacing:.07em;color:var(--t3)}
+.set-card{margin:0 16px 6px;background:var(--card);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.set-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:.5px solid var(--sep2)}
+.set-row:last-child{border-bottom:none}
+.set-row-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.set-row-body{flex:1}
+.set-row-name{font-size:16px;color:var(--t1)}
+.set-row-sub{font-size:12px;color:var(--t3);margin-top:1px;line-height:1.4}
+.set-time-row{padding:8px 16px 12px;display:flex;align-items:center;gap:8px;border-bottom:.5px solid var(--sep2)}
+.set-time-row:last-child{border-bottom:none}
+.set-time-lbl{font-size:14px;color:var(--t3);flex:1}
+.set-time-input{background:var(--bg);border:.5px solid var(--sep);border-radius:9px;padding:7px 12px;font-size:15px;font-weight:500;font-family:var(--font-m);color:var(--t1);text-align:center;width:96px;-webkit-appearance:none;cursor:pointer}
+.set-time-input:focus{outline:2px solid var(--blue);outline-offset:1px}
+
+/* iOS toggle */
+.tog{width:51px;height:31px;flex-shrink:0;background:var(--sep);border-radius:16px;cursor:pointer;position:relative;transition:background .2s}
+.tog.on{background:#30D158}
+.tog-k{position:absolute;width:27px;height:27px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .2s cubic-bezier(.34,1.56,.64,1);box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.tog.on .tog-k{transform:translateX(20px)}
+
+/* Toast */
+.toast{position:fixed;bottom:calc(28px + var(--sab));left:50%;transform:translateX(-50%) translateY(60px);background:rgba(50,50,52,.96);color:#fff;padding:10px 18px;border-radius:50px;font-size:14px;font-weight:500;white-space:nowrap;z-index:999;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.4);transition:transform .3s cubic-bezier(.34,1.56,.64,1);backdrop-filter:blur(8px)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Empty */
+.empty{padding:52px 24px;text-align:center}
+.empty-icon{font-size:44px;margin-bottom:14px}
+.empty-title{font-size:20px;font-weight:600;color:var(--t1);margin-bottom:6px}
+.empty-sub{font-size:15px;color:var(--t3);line-height:1.5}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-top">
+      <button class="hdr-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme"></button>
+      <button class="hdr-btn" id="gear-btn"  onclick="openSettings()" title="Settings">⚙️</button>
+    </div>
+  </div>
+
+  <div class="seg-wrap">
+    <div class="segmented">
+      <button class="seg-btn active" id="seg-s" onclick="switchTab('supplements')">Supplements</button>
+      <button class="seg-btn"        id="seg-k" onclick="switchTab('skincare')">Skincare</button>
+    </div>
+  </div>
+
+  <div class="day-strip-outer">
+    <div class="day-strip" id="day-strip"></div>
+  </div>
+
+  <div class="prog-strip">
+    <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="prog-label" id="prog-label">0 / 0</div>
+  </div>
+
+  <div class="list-scroll" id="list-scroll"></div>
+</div>
+
+<!-- completion banner -->
+<div class="complete-banner"><div class="cb-inner" id="cb-inner"><div class="cb-icon">🎉</div><div><div class="cb-text">Day complete!</div><div class="cb-sub">All routines finished</div></div></div></div>
+<div class="particles" id="particles"></div>
+
+<!-- detail sheet -->
+<div class="overlay" id="detail-ov" onclick="closeDetailBg(event)">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-hero"><div class="sh-title" id="ds-title"></div><div class="sh-sub" id="ds-sub"></div></div>
+    <div class="sh-body" id="ds-body"></div>
+    <button class="sh-close" onclick="closeDetail()">Done</button>
+  </div>
+</div>
+
+<!-- day summary sheet -->
+<div class="summary-ov" id="sum-ov" onclick="closeSumBg(event)">
+  <div class="summary-sheet">
+    <div class="sum-handle"></div>
+    <div class="sum-hdr">
+      <div class="sum-day-circle" id="sum-circle"></div>
+      <div class="sum-hdr-text">
+        <div class="sum-hdr-title" id="sum-title"></div>
+        <div class="sum-hdr-sub"   id="sum-sub"></div>
+      </div>
+      <button class="sum-close-btn" onclick="closeSummary()">✕</button>
+    </div>
+    <div class="sum-body" id="sum-body"></div>
+  </div>
+</div>
+
+<!-- settings sheet -->
+<div class="set-ov" id="set-ov" onclick="closeSetBg(event)">
+  <div class="set-sheet">
+    <div class="set-hdr"><div class="set-title">Settings</div><button class="set-done" onclick="closeSettings()">Done</button></div>
+    <div id="set-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* BADGE HELPERS */
+const B={
+  daily:{c:'bf',t:'Daily'}, altDay:{c:'bf',t:'Alt Days'}, threeWk:{c:'bf',t:'3× Week'},
+  withFat:{c:'bc',t:'With Fat'}, withFood:{c:'bc',t:'With Food'},
+  amOnly:{c:'bc',t:'AM Only'}, pmOnly:{c:'bc',t:'PM Only'},
+  beforeBed:{c:'bc',t:'Before Bed'}, anyTime:{c:'bc',t:'Any Time'}, boneDry:{c:'bc',t:'Bone Dry'},
+  cycle:{c:'bw',t:'Cycle 8wk'}, separate:{c:'bw',t:'Separate 1hr'},
+  sandwich:{c:'bw',t:'Sandwich'}, retinoid:{c:'bw',t:'Retinoid'},
+  step:n=>({c:'bs',t:`Step ${n}`}),
+  bha:{c:'bs',t:'BHA'}, doubleC:{c:'bs',t:'Double Cleanse'}, recovery:{c:'bs',t:'Recovery'},
+};
+const bh=arr=>arr.map(b=>`<span class="badge ${b.c}">${b.t}</span>`).join('');
+
+/* WAIT TIMES */
+const W={
+  afterCleanser:   {text:'Skin must be completely dry',   secs:120},
+  afterVitC:       {text:'Vitamin C absorbs',             secs:75},
+  afterMoisturizer:{text:'Moisturizer absorbs before SPF',secs:150},
+  afterBHA:        {text:'BHA fully absorbs — do not rinse', secs:120},
+  afterBuffer:     {text:'Buffer layer settles',          secs:90},
+};
+
+/* ROUTINE DATA  —  badge audit pass */
+function getSupplements(dow){
+  const zinc=[3,5,6].includes(dow), vitC=[0,2,4,6].includes(dow);
+  return [
+    {id:'sm',icon:'🌅',color:'#FF9500',label:'Morning',sub:'With Breakfast',items:[
+      {id:'vitd3',name:'Vitamin D3 2000 IU',sub:'1 capsule',
+       badges:[B.daily,B.withFat],
+       note:'Fat-soluble — take with a fat-containing meal. Absorption drops significantly without fat present.',dur:null,wait:null},
+      {id:'b12',name:'B12 Gummy',sub:'1 gummy',
+       badges:[B.daily,B.withFood],
+       note:'Always with food to avoid nausea. Replace with a full B-complex when this bottle runs out.',dur:null,wait:null},
+      ...(vitC?[{id:'vitcs',name:'Vitamin C 500–1000mg',sub:'With food · every other day',
+       badges:[B.altDay,B.withFood],
+       note:'Every other day only — daily 1000mg causes GI upset.',dur:null,wait:null}]:[]),
+    ]},
+    {id:'sd',icon:'🌞',color:'#00A693',label:'Midday',sub:'With Largest Meal',items:[
+      {id:'omega3',name:'Omega-3 Fish Oil',sub:'1 softgel (1000mg EPA+DHA)',
+       badges:[B.daily,B.withFood,...(zinc?[B.separate]:[])],
+       note:'Store in fridge. On zinc days, separate by at least 1 hour.',dur:null,wait:null},
+      {id:'creatine',name:'Creatine Monohydrate',sub:'3–5g in full glass of water, stir well',
+       badges:[B.daily,B.anyTime],
+       note:'Consistency over timing. Stir well. Start once training is established.',dur:null,wait:null},
+      ...(zinc?[{id:'zinc',name:'Zinc 50mg',sub:'Split ~25mg if possible · 1hr after Omega-3',
+       badges:[B.threeWk,B.withFood,B.separate],
+       note:'⚠️ Never on empty stomach — nausea. Max 3×/week at 50mg — depletes copper.',dur:null,wait:null}]:[]),
+    ]},
+    {id:'se',icon:'🌆',color:'#5856D6',label:'Evening',sub:'With Dinner',items:[
+      {id:'ashwa',name:'Ashwagandha 300mg',sub:'1 serving',
+       badges:[B.daily,B.withFood,B.cycle],
+       note:'Cycle 8 weeks on / 4 weeks off to prevent adaptation.',dur:null,wait:null},
+      {id:'protein',name:'Protein Shake',sub:'1 scoop in water',
+       badges:[B.daily],
+       note:'Start with half scoop to assess tolerance.',dur:null,wait:null},
+    ]},
+    {id:'sb',icon:'🌙',color:'#007AFF',label:'Before Bed',sub:'30–60 min before sleep',items:[
+      {id:'mag',name:'Magnesium Glycinate 240mg',sub:'1 serving · same time each night',
+       badges:[B.daily,B.beforeBed],
+       note:'Most important supplement. Same time nightly builds a sleep association.',dur:null,wait:null},
+    ]},
+  ];
+}
+
+function getSkincare(dow){
+  /* AM routine — every day */
+  const am={id:'skam',icon:'🌅',color:'#FF9500',label:'Morning',sub:'Full AM Routine',items:[
+    {id:'sk_cl_am',name:'CeraVe Hydrating Cleanser',sub:'Nickel-sized · lukewarm water',
+     badges:[B.step(1),B.daily],
+     note:'Gentle circles with fingertip pads. Max 30–45 sec. Pat dry — do not rub.',
+     dur:40,durLabel:'45 sec · gentle circles',wait:W.afterCleanser},
+    {id:'sk_vitc',name:'Vitamin C Serum',sub:'3–4 drops · press & pat upward, no rubbing',
+     /* daily + AM only — both present */
+     badges:[B.step(2),B.daily,B.amOnly],
+     note:'Press and pat outward and upward — no rubbing. Boosts SPF, fades marks. Morning only.',
+     dur:30,durLabel:'30 sec · press & pat',wait:W.afterVitC},
+    {id:'sk_mam',name:'CeraVe PM Lotion',sub:'Pea-sized · press outward · blend to hairline',
+     badges:[B.step(3),B.daily],
+     note:'Press outward from center. Blend to hairline and jaw. Wait before SPF.',
+     dur:20,durLabel:'20 sec · press outward',wait:W.afterMoisturizer},
+    /* SPF badge removed — self-explanatory from product name */
+    {id:'sk_spf',name:'EltaMD UV Clear SPF 46',sub:'Half teaspoon · face, ears, neck',
+     badges:[B.step(4),B.daily,B.amOnly],
+     note:'Half teaspoon for full UV protection. Press outward — never rub. Non-negotiable every morning.',
+     dur:null,durLabel:null,wait:null},
+  ]};
+
+  /* PM routine — depends on day */
+  let pm;
+  if(dow===1||dow===4){
+    pm={id:'skpm',icon:'🌙',color:'#007AFF',label:'Evening',sub:'BHA Night',items:[
+      {id:'sk_balm_b',name:'Neutrogena Cleansing Balm',sub:'Hazelnut-sized · dry hands & face',
+       badges:[B.step(1),B.daily,B.doubleC],
+       note:'Dry hands, dry face. Warm between fingers. Firm outward circles 60 sec. Emulsify until milky. Rinse fully.',
+       dur:60,durLabel:'60 sec · firm circles',wait:null},
+      {id:'sk_cl_b',name:'CeraVe Hydrating Cleanser',sub:'Nickel-sized · gentle · pat completely dry',
+       badges:[B.step(2),B.daily,B.boneDry],
+       note:'Gentle second cleanse. Pat completely dry — wait full 2 min before BHA.',
+       dur:30,durLabel:'30 sec · gentle circles',wait:W.afterCleanser},
+      {id:'sk_bha',name:"Paula's Choice BHA Exfoliant",sub:'Saturated pad · one-direction swipes · leave on',
+       badges:[B.bha,B.pmOnly,B.boneDry],
+       note:'Bone dry skin only. Saturate pad, one-direction swipes per zone. Do NOT rinse off. No Adapalene tonight.',
+       dur:null,durLabel:null,wait:W.afterBHA},
+      {id:'sk_mbha',name:'CeraVe PM Lotion',sub:'Pea-sized · after BHA fully absorbs',
+       badges:[B.step(4),B.pmOnly],
+       note:'Seal and hydrate overnight after BHA absorbs.',
+       dur:20,durLabel:'20 sec · press outward',wait:null},
+    ]};
+  } else if(dow===6){
+    pm={id:'skpm',icon:'🌙',color:'#FF3B30',label:'Evening',sub:'Adapalene Night',items:[
+      {id:'sk_balm_a',name:'Neutrogena Cleansing Balm',sub:'Hazelnut-sized · dry hands & face',
+       badges:[B.step(1),B.daily,B.doubleC],
+       note:'Dry hands, dry face. Firm outward circles 60 sec. Emulsify until milky. Rinse fully.',
+       dur:60,durLabel:'60 sec · firm circles',wait:null},
+      {id:'sk_cl_a',name:'CeraVe Hydrating Cleanser',sub:'Nickel-sized · gentle · pat fully dry',
+       badges:[B.step(2),B.daily],
+       note:'Gentle second cleanse. Pat completely dry.',
+       dur:30,durLabel:'30 sec · gentle circles',wait:W.afterCleanser},
+      {id:'sk_buf',name:'CeraVe PM Lotion — Buffer Layer',sub:'Pea-sized · before Adapalene · sandwich ①',
+       badges:[B.step(3),B.daily,B.sandwich],
+       note:'Sandwich method buffer layer. Reduces irritation. Do not skip.',
+       dur:20,durLabel:'20 sec · press outward',wait:W.afterBuffer},
+      {id:'sk_ada',name:'Differin Adapalene 0.1%',sub:'One pea-sized dot · 4 points, press outward',
+       badges:[B.retinoid,B.pmOnly,B.sandwich],
+       note:'⚠️ One pea-sized amount entire face. Dot onto forehead, cheeks, chin. Press outward — do not rub. Avoid eyes/lips/nostrils. Purging weeks 1–6 is normal.',
+       dur:null,durLabel:null,wait:null},
+      {id:'sk_seal',name:'CeraVe PM Lotion — Seal Layer',sub:'Pea-sized · over Adapalene · sandwich ②',
+       badges:[B.step(5),B.daily,B.sandwich],
+       note:'Second moisturizer seals Adapalene. Essential for sensitive skin.',
+       dur:20,durLabel:'20 sec · press outward',wait:null},
+    ]};
+  } else if(dow===0){
+    pm={id:'skpm',icon:'🌙',color:'#34C759',label:'Evening',sub:'Recovery Night',items:[
+      {id:'sk_balm_r',name:'Neutrogena Cleansing Balm',sub:'Hazelnut-sized · extra gentle tonight',
+       badges:[B.step(1),B.daily,B.recovery],
+       note:'Recovery night post-Adapalene. Extra gentle. Circles 60 sec. Emulsify until milky. Rinse fully.',
+       dur:60,durLabel:'60 sec · gentle circles',wait:null},
+      {id:'sk_cl_r',name:'CeraVe Hydrating Cleanser',sub:'Nickel-sized · gentle · pat dry',
+       badges:[B.step(2),B.daily,B.recovery],
+       note:'Gentle second cleanse.',
+       dur:30,durLabel:'30 sec · gentle circles',wait:null},
+      {id:'sk_rec',name:'CeraVe PM Lotion — Recovery Layer',sub:'Slightly generous · no actives tonight',
+       badges:[B.step(3),B.daily,B.recovery,B.pmOnly],
+       note:'Slightly more than usual. No actives. Recovery nights are active barrier repair.',
+       dur:20,durLabel:'20 sec · press outward',wait:null},
+    ]};
+  } else {
+    pm={id:'skpm',icon:'🌙',color:'#34C759',label:'Evening',sub:'Rest Night',items:[
+      {id:'sk_balm_rs',name:'Neutrogena Cleansing Balm',sub:'Hazelnut-sized · dry hands & face',
+       badges:[B.step(1),B.daily,B.doubleC],
+       note:'Dry hands, dry face. Firm circles 60 sec. Emulsify until milky. Rinse fully.',
+       dur:60,durLabel:'60 sec · firm circles',wait:null},
+      {id:'sk_cl_rs',name:'CeraVe Hydrating Cleanser',sub:'Nickel-sized · gentle · pat dry',
+       badges:[B.step(2),B.daily],
+       note:'Gentle second cleanse.',
+       dur:30,durLabel:'30 sec · gentle circles',wait:null},
+      {id:'sk_mrest',name:'CeraVe PM Lotion',sub:'Pea-sized · press outward',
+       badges:[B.step(3),B.daily,B.recovery],
+       note:'Rest nights are active recovery. No actives.',
+       dur:20,durLabel:'20 sec · press outward',wait:null},
+    ]};
+  }
+  return [am,pm];
+}
+
+/* STATE */
+let S={
+  theme:'light',
+  dow:new Date().getDay(),
+  tab:'supplements',
+  checks:{},
+  streaks:{},  // "tab_itemId" → { current:N, best:N, lastDate:"YYYY-MM-DD" }
+  waitEndMs:{},
+  doEndMs:{},
+  settings:{
+    stepTimers:false,
+    seqLock:false,
+    testMode:false,
+    notifs:{
+      morning:{on:false,time:'09:00'},
+      midday: {on:false,time:'12:30'},
+      evening:{on:false,time:'18:00'},
+      bed:    {on:false,time:'23:00'},
+    }
+  }
+};
+const IV={}; // live intervals
+
+function save(){
+  try{localStorage.setItem('dr_v6',JSON.stringify(S));}catch(e){}
+}
+function load(){
+  try{
+    const d=localStorage.getItem('dr_v6');
+    if(d){
+      const p=JSON.parse(d);
+      // Migrate old skipDoTimer key if present
+      if(p.settings&&p.settings.skipDoTimer!==undefined&&p.settings.stepTimers===undefined){
+        p.settings.stepTimers=!p.settings.skipDoTimer;
+        delete p.settings.skipDoTimer;
+      }
+      S={...S,...p,settings:{...S.settings,...(p.settings||{}),notifs:{...S.settings.notifs,...((p.settings||{}).notifs||{})}}};
+    }
+  }catch(e){}
+}
+function prune(){
+  const wk=weekKey();
+  Object.keys(S.checks).forEach(k=>{if(!k.startsWith(wk))delete S.checks[k];});
+  // Expire stale timers
+  Object.keys(S.doEndMs).forEach(k=>{if(Date.now()>=S.doEndMs[k])delete S.doEndMs[k];});
+  Object.keys(S.waitEndMs).forEach(k=>{if(Date.now()>=S.waitEndMs[k])delete S.waitEndMs[k];});
+  save();
+}
+function weekKey(){
+  const d=new Date();d.setHours(0,0,0,0);
+  const dd=d.getDay(),diff=dd===0?-6:1-dd;d.setDate(d.getDate()+diff);
+  return `w${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+function ck(dow,tab,id){return `${weekKey()}_${dow}_${tab}_${id}`;}
+function pk(dow,tab,id){return `${dow}_${tab}_${id}`;}
+function todayDow(){return new Date().getDay();}
+/* Only today is interactive — unless test mode is on */
+function isViewOnly(dow){return !S.settings.testMode && dow!==todayDow();}
+
+/* HAPTICS */
+function haptic(type){
+  if(!navigator.vibrate) return;
+  if(type==='light')  navigator.vibrate(10);
+  if(type==='medium') navigator.vibrate(35);
+}
+
+/* STREAK ENGINE
+   Stored in S.streaks["tab_itemId"] = { current, best, lastDate }
+   lastDate = "YYYY-MM-DD" of last day checked
+   Consecutive = checked on calendar day immediately prior
+ */
+function streakKey(tab,id){return `${tab}_${id}`;}
+
+function todayDateStr(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function dateStrFromDow(dow){
+  // Get the date string for a given day-of-week in the current week
+  const today=new Date(),td=today.getDay();
+  const ti=td===0?6:td-1;
+  const mon=new Date(today);mon.setDate(today.getDate()-ti);
+  const orderedDow=[1,2,3,4,5,6,0];
+  const pos=orderedDow.indexOf(dow);
+  const d=new Date(mon);d.setDate(mon.getDate()+pos);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function daysBetween(dateStr1,dateStr2){
+  const d1=new Date(dateStr1),d2=new Date(dateStr2);
+  return Math.round((d2-d1)/(1000*60*60*24));
+}
+
+function getStreak(tab,id){
+  return S.streaks[streakKey(tab,id)]||{current:0,best:0,lastDate:null};
+}
+
+function updateStreak(dow,tab,id,isChecking){
+  const key=streakKey(tab,id);
+  const dateStr=dateStrFromDow(dow);
+  const existing=S.streaks[key]||{current:0,best:0,lastDate:null};
+
+  if(isChecking){
+    let newCurrent;
+    if(!existing.lastDate){
+      newCurrent=1;
+    } else {
+      const diff=daysBetween(existing.lastDate,dateStr);
+      if(diff===1) newCurrent=existing.current+1;      // consecutive
+      else if(diff===0) newCurrent=existing.current;   // same day, no change
+      else newCurrent=1;                               // gap, reset
+    }
+    S.streaks[key]={
+      current:newCurrent,
+      best:Math.max(newCurrent,existing.best),
+      lastDate:dateStr
+    };
+  } else {
+    // Unchecking — if it was today, decrement current back
+    if(existing.lastDate===dateStr){
+      const newCurrent=Math.max(0,existing.current-1);
+      // Rewind lastDate to yesterday
+      const yesterday=new Date(dateStr);yesterday.setDate(yesterday.getDate()-1);
+      const yStr=`${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+      S.streaks[key]={
+        current:newCurrent,
+        best:existing.best,
+        lastDate:newCurrent>0?yStr:null
+      };
+    }
+  }
+  save();
+}
+
+function streakHtml(tab,id){
+  const s=getStreak(tab,id);
+  if(s.current===0) return '';
+  const isBest=s.current>0&&s.current>=s.best&&s.best>1;
+  const cls=isBest?'streak-pill is-best':s.current===1?'streak-pill is-one':'streak-pill';
+  const icon=isBest?'★':s.current===1?'·':'🔥';
+  return `<span class="${cls}">${icon} ${s.current}d</span>`;
+}
+
+/* SEQUENTIAL LOCK */
+function seqStatus(dow,tab,items,itemId){
+  // Returns 'open' or 'seq-locked'
+  if(tab!=='skincare'||!S.settings.seqLock)return 'open';
+  const idx=items.findIndex(i=>i.id===itemId);
+  if(idx===0)return 'open';
+  const prev=items[idx-1];
+  if(!S.checks[ck(dow,tab,prev.id)])return 'seq-locked';
+  // If prev has a wait, check it's expired
+  if(prev.wait){
+    const wk2=pk(dow,tab,prev.id)+'_wait';
+    if(S.waitEndMs[wk2]&&Date.now()<S.waitEndMs[wk2])return 'seq-locked';
+  }
+  return 'open';
+}
+
+/* TIMER UTILS */
+function fmtSecs(s){
+  s=Math.max(0,Math.round(s));
+  const m=Math.floor(s/60),sec=s%60;
+  return m>0?`${m}:${String(sec).padStart(2,'0')}`:`${sec}s`;
+}
+
+/* Flush all active timers for a given dow+tab (called when settings change) */
+function flushTimers(dow,tab){
+  // Clear all intervals for this dow+tab
+  Object.keys(IV).forEach(k=>{
+    if(k.includes(`_${dow}_${tab}_`)){clearInterval(IV[k]);delete IV[k];}
+  });
+  // Clear endMs entries
+  Object.keys(S.doEndMs).forEach(k=>{if(k.startsWith(`${dow}_${tab}_`))delete S.doEndMs[k];});
+  Object.keys(S.waitEndMs).forEach(k=>{if(k.startsWith(`${dow}_${tab}_`))delete S.waitEndMs[k];});
+  save();
+}
+
+/* Do-timer */
+function startDoTimer(dow,tab,item){
+  if(!S.settings.stepTimers){markDoComplete(dow,tab,item);return;}
+  const key=pk(dow,tab,item.id)+'_do';
+  S.doEndMs[key]=Date.now()+item.dur*1000;save();
+  tickDo(dow,tab,item,key);
+}
+function tickDo(dow,tab,item,key){
+  const ivk='do_'+key;
+  if(IV[ivk])clearInterval(IV[ivk]);
+  IV[ivk]=setInterval(()=>{
+    const rem=Math.ceil((S.doEndMs[key]-Date.now())/1000);
+    const el=document.getElementById(`do_${dow}_${tab}_${item.id}`);
+    if(el){const cd=el.querySelector('.do-countdown');if(cd)cd.textContent=fmtSecs(rem);}
+    if(rem<=0){
+      clearInterval(IV[ivk]);delete IV[ivk];delete S.doEndMs[key];save();
+      haptic('medium');
+      markDoComplete(dow,tab,item);
+    }
+  },500);
+}
+function markDoComplete(dow,tab,item){
+  const row=document.getElementById(`row_${dow}_${tab}_${item.id}`);
+  if(!row)return;
+  row.classList.remove('is-doing');
+  const db=document.getElementById(`do_${dow}_${tab}_${item.id}`);if(db)db.remove();
+  const tick=row.querySelector('.sc-tick');
+  if(tick){tick.classList.remove('pulse');void tick.offsetWidth;tick.classList.add('pulse');}
+  row.classList.add('tappable');
+  row.onclick=()=>checkSkinItem(dow,tab,item);
+}
+function skipDo(dow,tab,item){
+  const key=pk(dow,tab,item.id)+'_do';
+  const ivk='do_'+key;
+  if(IV[ivk]){clearInterval(IV[ivk]);delete IV[ivk];}
+  delete S.doEndMs[key];save();
+  markDoComplete(dow,tab,item);
+}
+
+/* Wait-timer */
+function startWait(dow,tab,item){
+  const key=pk(dow,tab,item.id)+'_wait';
+  S.waitEndMs[key]=Date.now()+item.wait.secs*1000;save();
+  tickWait(dow,tab,item,key);
+  updateWcon(dow,tab,item,'waiting',item.wait.secs);
+}
+function tickWait(dow,tab,item,key){
+  const ivk='wt_'+key;
+  if(IV[ivk])clearInterval(IV[ivk]);
+  IV[ivk]=setInterval(()=>{
+    const rem=Math.ceil((S.waitEndMs[key]-Date.now())/1000);
+    updateWcon(dow,tab,item,'waiting',rem);
+    if(rem<=0){
+      clearInterval(IV[ivk]);delete IV[ivk];delete S.waitEndMs[key];save();
+      haptic('medium');
+      updateWcon(dow,tab,item,'done',0);
+      unlockNext(dow,tab,item);
+    }
+  },500);
+}
+function updateWcon(dow,tab,item,state,rem){
+  const el=document.getElementById(`wcon_${dow}_${tab}_${item.id}`);
+  if(!el)return;
+  const pill=el.querySelector('.wcon-pill');
+  const icon=el.querySelector('.wcon-icon');
+  const txt=el.querySelector('.wcon-txt');
+  if(!pill)return;
+  if(state==='waiting'&&rem>0){
+    pill.className='wcon-pill waiting';
+    if(icon)icon.textContent='⏳';if(txt)txt.textContent=fmtSecs(rem);
+  } else if(state==='done'){
+    pill.className='wcon-pill done';
+    if(icon)icon.textContent='✓';if(txt)txt.textContent='Done';
+  } else {
+    pill.className='wcon-pill pending';
+    if(icon)icon.textContent='⏱';if(txt)txt.textContent=item.wait?fmtSecs(item.wait.secs):'—';
+  }
+}
+function unlockNext(dow,tab,item){
+  const sessions=tab==='skincare'?getSkincare(dow):getSupplements(dow);
+  for(const sess of sessions){
+    const idx=sess.items.findIndex(i=>i.id===item.id);
+    if(idx>=0&&idx<sess.items.length-1){
+      const next=sess.items[idx+1];
+      const nextRow=document.getElementById(`row_${dow}_${tab}_${next.id}`);
+      if(nextRow){
+        nextRow.classList.remove('is-locked-seq');
+        wireUnlockedRow(dow,tab,next,nextRow);
+      }
+      return;
+    }
+  }
+}
+function wireUnlockedRow(dow,tab,item,rowEl){
+  if(item.dur&&S.settings.stepTimers){
+    // Show start button
+    let sb=rowEl.querySelector('.sb');
+    if(sb&&!document.getElementById(`do_${dow}_${tab}_${item.id}`)){
+      const db=document.createElement('div');
+      db.className='do-block';db.id=`do_${dow}_${tab}_${item.id}`;
+      db.innerHTML=`<div style="flex:1"><div class="do-label">${item.durLabel}</div></div><button class="do-start-btn" id="dsb_${dow}_${tab}_${item.id}">Start</button>`;
+      sb.appendChild(db);
+      document.getElementById(`dsb_${dow}_${tab}_${item.id}`).onclick=e=>{
+        e.stopPropagation();
+        db.innerHTML=`<div class="do-countdown">${fmtSecs(item.dur)}</div><div class="do-label">${item.durLabel}</div><button class="do-skip" id="dsk_${dow}_${tab}_${item.id}">Skip</button>`;
+        document.getElementById(`dsk_${dow}_${tab}_${item.id}`).onclick=e2=>{e2.stopPropagation();skipDo(dow,tab,item);};
+        rowEl.classList.add('is-doing');rowEl.classList.remove('tappable');rowEl.onclick=null;
+        startDoTimer(dow,tab,item);
+      };
+    }
+  } else {
+    rowEl.classList.add('tappable');rowEl.onclick=()=>checkSkinItem(dow,tab,item);
+    const tick=rowEl.querySelector('.sc-tick');
+    if(tick){tick.classList.remove('pulse');void tick.offsetWidth;tick.classList.add('pulse');}
+  }
+}
+
+/* Check skincare item */
+function checkSkinItem(dow,tab,item){
+  const cKey=ck(dow,tab,item.id);
+  if(S.checks[cKey])return;
+  S.checks[cKey]=true;save();
+  haptic('light');
+  updateStreak(dow,tab,item.id,true);
+  const row=document.getElementById(`row_${dow}_${tab}_${item.id}`);
+  if(row){
+    row.classList.remove('tappable');row.onclick=null;
+    row.classList.add('is-checked');
+    row.style.transform='scale(.975)';setTimeout(()=>row.style.transform='',120);
+  }
+  if(item.wait){
+    startWait(dow,tab,item);
+  } else {
+    updateWcon(dow,tab,item,'none',0);
+    unlockNext(dow,tab,item);
+  }
+  updateGrpCount(dow,tab);renderProgress();renderDayStrip();
+  checkSessionDone(dow,tab,item);
+}
+
+/* Check supplement item (free toggle) */
+function checkSuppItem(cKey,dow,tab,item){
+  S.checks[cKey]=!S.checks[cKey];save();
+  haptic('light');
+  updateStreak(dow,tab,item.id,!!S.checks[cKey]);
+  const row=document.getElementById(`row_${dow}_${tab}_${item.id}`);
+  if(row){
+    row.classList.toggle('is-checked',!!S.checks[cKey]);
+    row.style.transform='scale(.975)';setTimeout(()=>row.style.transform='',120);
+  }
+  updateGrpCount(dow,tab);renderProgress();renderDayStrip();
+  checkSessionDone(dow,tab,item);
+}
+
+/* COMPLETION */
+function updateGrpCount(dow,tab){
+  const sessions=tab==='skincare'?getSkincare(dow):getSupplements(dow);
+  sessions.forEach(sess=>{
+    const done=sess.items.filter(i=>S.checks[ck(dow,tab,i.id)]).length;
+    const total=sess.items.length;
+    const cnt=document.getElementById(`grpcnt_${dow}_${tab}_${sess.id}`);
+    if(cnt){cnt.textContent=`${done}/${total}`;cnt.classList.toggle('done',done===total);}
+  });
+}
+function checkSessionDone(dow,tab,item){
+  const sessions=tab==='skincare'?getSkincare(dow):getSupplements(dow);
+  for(const sess of sessions){
+    if(!sess.items.some(i=>i.id===item.id))continue;
+    if(sess.items.every(i=>S.checks[ck(dow,tab,i.id)])){
+      const card=document.getElementById(`grpcard_${dow}_${tab}_${sess.id}`);
+      if(card){card.classList.remove('flash');void card.offsetWidth;card.classList.add('flash');}
+    }
+  }
+  checkDayDone(dow);
+}
+function checkDayDone(dow){
+  const all=[...getSupplements(dow),...getSkincare(dow)].flatMap(s=>s.items);
+  const suppDone=all.every(i=>S.checks[ck(dow,'supplements',i.id)]||S.checks[ck(dow,'skincare',i.id)]);
+  if(suppDone)triggerDayComplete();
+}
+function triggerDayComplete(){
+  const cb=document.getElementById('cb-inner');
+  cb.classList.add('show');spawnParticles();
+  setTimeout(()=>cb.classList.remove('show'),3500);
+}
+function spawnParticles(){
+  const c=document.getElementById('particles');c.innerHTML='';
+  const cols=['#34C759','#007AFF','#FF9500','#FF3B30','#AF52DE','#32ADE6'];
+  for(let i=0;i<30;i++){
+    const p=document.createElement('div');p.className='particle';
+    const tx=(Math.random()-.5)*window.innerWidth*.85;
+    const ty=-(Math.random()*window.innerHeight*.75+100);
+    p.style.cssText=`left:50%;top:40%;background:${cols[i%cols.length]};--tx:${tx}px;--ty:${ty}px;animation:particleFly ${.8+Math.random()*.7}s ${Math.random()*.25}s ease-out forwards`;
+    c.appendChild(p);
+  }
+  setTimeout(()=>c.innerHTML='',2500);
+}
+
+/* 
+   RENDER — DAY STRIP
+   Ring radius=13, so circumference = 2π×13 ≈ 81.68
+ */
+const RING_C=2*Math.PI*14; // r=14 → 87.96, sits outside 24px inner circle
+
+function renderDayStrip(){
+  const strip=document.getElementById('day-strip');
+  strip.className='day-strip'+(S.settings.testMode?' test-mode':'');
+  const today=new Date(),td=today.getDay();
+  const ti=td===0?6:td-1;
+  const mon=new Date(today);mon.setDate(today.getDate()-ti);
+  const orderedDow=[1,2,3,4,5,6,0];
+  const isDark=S.theme==='dark';
+  const c1=isDark?'#0A84FF':'#007AFF';
+  const c2=isDark?'#30D158':'#34C759';
+
+  strip.innerHTML=orderedDow.map((dow,i)=>{
+    const d=new Date(mon);d.setDate(mon.getDate()+i);
+    const isToday=dow===td;
+    const isSel=dow===S.dow;
+    const dist=Math.abs(i-orderedDow.indexOf(S.dow));
+    const opac=isSel?1:Math.max(0.3,1-dist*.14);
+    const scale=isSel?1.07:Math.max(0.9,1-dist*.025);
+
+    const suppS=getSupplements(dow),skinS=getSkincare(dow);
+    const allItems=[...suppS,...skinS].flatMap(s=>s.items);
+    let tot=allItems.length,dn=0;
+    allItems.forEach(it=>{
+      if(S.checks[ck(dow,'supplements',it.id)]||S.checks[ck(dow,'skincare',it.id)])dn++;
+    });
+    const pct=tot?dn/tot:0;
+    const offset=RING_C-(RING_C*pct);
+    const gradId=`rg_${i}`;
+    const isDone=pct>=1;
+    const stroke=pct<=0?'none':isDone?c2:`url(#${gradId})`;
+
+    let cls='dc';
+    if(isToday)cls+=' today';
+    if(isSel)cls+=' sel';
+
+    return `<div class="${cls}" style="opacity:${opac};transform:scale(${scale});position:relative" onclick="dayChipClick(${dow})">
+      <div class="dc-dow">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dow]}</div>
+      <div class="dc-ring">
+        <svg width="36" height="36" viewBox="0 0 36 36">
+          <defs>
+            <linearGradient id="${gradId}" x1="1" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${c1}"/>
+              <stop offset="100%" stop-color="${c2}"/>
+            </linearGradient>
+          </defs>
+          <circle class="ring-track" cx="18" cy="18" r="14"/>
+          <circle class="ring-prog" cx="18" cy="18" r="14"
+            stroke="${stroke}"
+            style="stroke-dasharray:${RING_C};stroke-dashoffset:${offset}"/>
+        </svg>
+        <div class="dc-inner">
+          <div class="dc-circle"><div class="dc-num">${d.getDate()}</div></div>
+        </div>
+      </div>
+      <button class="dc-reset" onclick="event.stopPropagation();resetDay(${dow})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function renderProgress(){
+  const dow=S.dow,tab=S.tab;
+  const sessions=tab==='supplements'?getSupplements(dow):getSkincare(dow);
+  let tot=0,dn=0;
+  sessions.forEach(s=>s.items.forEach(it=>{tot++;if(S.checks[ck(dow,tab,it.id)])dn++;}));
+  const pct=tot?Math.round(dn/tot*100):0;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-label').textContent=`${dn} / ${tot}`;
+}
+
+/* RENDER — LIST */
+function renderList(){
+  const dow=S.dow,tab=S.tab;
+  const viewOnly=isViewOnly(dow);
+  const sessions=tab==='supplements'?getSupplements(dow):getSkincare(dow);
+  const scroll=document.getElementById('list-scroll');
+  let html='';
+
+  if(!sessions.length){
+    scroll.innerHTML=html+`<div class="empty"><div class="empty-icon">✨</div><div class="empty-title">Nothing here</div></div>`;
+    renderProgress();return;
+  }
+
+  sessions.forEach(sess=>{
+    const done=sess.items.filter(i=>S.checks[ck(dow,tab,i.id)]).length;
+    const total=sess.items.length;
+    html+=`<div class="grp">
+      <div class="grp-hdr">
+        <div class="grp-hdr-top">
+          <div class="grp-lbl-main">${sess.label}</div>
+          <div class="grp-count${done===total?' done':''}" id="grpcnt_${dow}_${tab}_${sess.id}">${done} / ${total}</div>
+        </div>
+        <div class="grp-rule" style="background:linear-gradient(90deg,${sess.color} 0%,${sess.color}44 60%,transparent 100%)"></div>
+      </div>
+      <div class="grp-card" id="grpcard_${dow}_${tab}_${sess.id}">`;
+
+    sess.items.forEach((item,idx)=>{
+      const cKey=ck(dow,tab,item.id);
+      const isChecked=!!S.checks[cKey];
+      const ss=seqStatus(dow,tab,sess.items,item.id);
+      const doKey=pk(dow,tab,item.id)+'_do';
+      const doRunning=S.doEndMs[doKey]&&Date.now()<S.doEndMs[doKey];
+      const doRem=doRunning?Math.ceil((S.doEndMs[doKey]-Date.now())/1000):0;
+      const wKey2=pk(dow,tab,item.id)+'_wait';
+      const waitRunning=S.waitEndMs[wKey2]&&Date.now()<S.waitEndMs[wKey2];
+      const waitRem=waitRunning?Math.ceil((S.waitEndMs[wKey2]-Date.now())/1000):0;
+
+      let rowCls='srow';
+      if(isChecked)rowCls+=' is-checked';
+      else if(viewOnly)rowCls+=' is-view-locked';
+      else if(ss==='seq-locked')rowCls+=' is-locked-seq';
+      else if(doRunning)rowCls+=' is-doing';
+      else rowCls+=' tappable';
+
+      // onclick
+      let clickAttr='';
+      if(!viewOnly&&!isChecked&&ss==='open'&&!doRunning){
+        if(tab==='supplements'){
+          clickAttr=`data-supp="1"`;
+        }
+        // skincare handled via wireUnlockedRow / markDoComplete
+      }
+
+      html+=`<div class="${rowCls}" id="row_${dow}_${tab}_${item.id}" ${clickAttr}>
+        <div class="sc"><svg class="sc-tick" width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="sb">
+          <div class="sb-name">${item.name}</div>
+          <div class="sb-badges">${bh(item.badges)}</div>`;
+
+      // Do-block for open skincare with duration
+      if(tab==='skincare'&&item.dur&&!isChecked&&ss==='open'&&!viewOnly){
+        if(doRunning){
+          html+=`<div class="do-block" id="do_${dow}_${tab}_${item.id}">
+            <div class="do-countdown">${fmtSecs(doRem)}</div>
+            <div class="do-label">${item.durLabel}</div>
+            <button class="do-skip" id="dsk_${dow}_${tab}_${item.id}">Skip</button>
+          </div>`;
+        } else if(S.settings.stepTimers){
+          html+=`<div class="do-block" id="do_${dow}_${tab}_${item.id}">
+            <div style="flex:1"><div class="do-label">${item.durLabel}</div></div>
+            <button class="do-start-btn" id="dsb_${dow}_${tab}_${item.id}">Start</button>
+          </div>`;
+        }
+      }
+
+      html+=`</div>`;
+      if(item.note)html+=`<button class="srow-info" onclick="event.stopPropagation();openDetail(${dow},'${tab}','${item.id}')">ⓘ</button>`;
+      html+=`</div>`;
+
+      // Wait connector (skincare only)
+      if(tab==='skincare'&&item.wait&&idx<sess.items.length-1){
+        let pState='pending',pIcon='⏱',pTxt=fmtSecs(item.wait.secs);
+        if(waitRunning){pState='waiting';pIcon='⏳';pTxt=fmtSecs(waitRem);}
+        else if(isChecked&&!S.waitEndMs[wKey2]){pState='done';pIcon='✓';pTxt='Done';}
+        html+=`<div class="wcon" id="wcon_${dow}_${tab}_${item.id}">
+          <div class="wcon-track"></div>
+          <div class="wcon-inner">
+            <div class="wcon-lbl"><strong>${item.wait.text}</strong></div>
+            <div class="wcon-pill ${pState}">
+              <span class="wcon-icon">${pIcon}</span>
+              <span class="wcon-txt">${pTxt}</span>
+            </div>
+          </div>
+        </div>`;
+      }
+    });
+
+    html+=`</div></div>`;
+  });
+
+  scroll.innerHTML=html;
+
+  // Wire supplement rows
+  sessions.forEach(sess=>sess.items.forEach(item=>{
+    if(tab!=='supplements')return;
+    const row=document.getElementById(`row_${dow}_${tab}_${item.id}`);
+    if(row&&row.dataset.supp==='1'){
+      const cKey=ck(dow,tab,item.id);
+      row.onclick=()=>checkSuppItem(cKey,dow,tab,item);
+    }
+  }));
+
+  // Wire skincare rows — first item of each session always open
+  if(tab==='skincare'&&!viewOnly){
+    sessions.forEach(sess=>{
+      sess.items.forEach((item,idx)=>{
+        const isChecked=!!S.checks[ck(dow,tab,item.id)];
+        if(isChecked)return;
+        const ss=seqStatus(dow,tab,sess.items,item.id);
+        if(ss!=='open')return;
+        const row=document.getElementById(`row_${dow}_${tab}_${item.id}`);
+        if(!row)return;
+        const doKey=pk(dow,tab,item.id)+'_do';
+        const doRunning=S.doEndMs[doKey]&&Date.now()<S.doEndMs[doKey];
+
+        if(doRunning){
+          tickDo(dow,tab,item,doKey);
+          const dskBtn=document.getElementById(`dsk_${dow}_${tab}_${item.id}`);
+          if(dskBtn)dskBtn.onclick=e=>{e.stopPropagation();skipDo(dow,tab,item);};
+        } else if(item.dur&&S.settings.stepTimers){
+          const startBtn=document.getElementById(`dsb_${dow}_${tab}_${item.id}`);
+          if(startBtn)startBtn.onclick=e=>{
+            e.stopPropagation();
+            const db=document.getElementById(`do_${dow}_${tab}_${item.id}`);
+            if(db){
+              db.innerHTML=`<div class="do-countdown">${fmtSecs(item.dur)}</div><div class="do-label">${item.durLabel}</div><button class="do-skip" id="dsk_${dow}_${tab}_${item.id}">Skip</button>`;
+              document.getElementById(`dsk_${dow}_${tab}_${item.id}`).onclick=e2=>{e2.stopPropagation();skipDo(dow,tab,item);};
+            }
+            row.classList.add('is-doing');row.classList.remove('tappable');row.onclick=null;
+            startDoTimer(dow,tab,item);
+          };
+        } else {
+          row.classList.add('tappable');
+          row.onclick=()=>checkSkinItem(dow,tab,item);
+          if(idx===0){
+            const tick=row.querySelector('.sc-tick');
+            if(tick){tick.classList.remove('pulse');void tick.offsetWidth;tick.classList.add('pulse');}
+          }
+        }
+
+        // Restore wait timer
+        const wKey2=pk(dow,tab,item.id)+'_wait';
+        if(S.waitEndMs[wKey2]&&Date.now()<S.waitEndMs[wKey2]){
+          tickWait(dow,tab,item,wKey2);
+        }
+      });
+    });
+  }
+
+  renderProgress();
+}
+
+/* NAV ACTIONS */
+function dayChipClick(dow){
+  if(dow===todayDow()||S.settings.testMode){
+    S.dow=dow;save();renderDayStrip();renderList();
+  } else {
+    openSummary(dow);
+  }
+}
+
+function selectDay(dow){
+  S.dow=dow;save();renderDayStrip();renderList();
+}
+
+function switchTab(tab){
+  S.tab=tab;
+  document.getElementById('seg-s').classList.toggle('active',tab==='supplements');
+  document.getElementById('seg-k').classList.toggle('active',tab==='skincare');
+  save();renderList();
+}
+
+/* Theme toggle — single button, icon shows what mode you'll switch TO */
+function toggleTheme(){
+  S.theme=S.theme==='light'?'dark':'light';
+  applyTheme();save();
+}
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',S.theme);
+  document.getElementById('tc').setAttribute('content',S.theme==='light'?'#F2F2F7':'#000000');
+  // Icon: show moon in light (tap → go dark), sun in dark (tap → go light)
+  const btn=document.getElementById('theme-btn');
+  if(btn)btn.textContent=S.theme==='light'?'🌙':'☀️';
+}
+
+/* DETAIL SHEET */
+/* DAY SUMMARY SHEET */
+function openSummary(dow){
+  const today=new Date(),td=today.getDay();
+  const ti=td===0?6:td-1;
+  const mon=new Date(today);mon.setDate(today.getDate()-ti);
+  const orderedDow=[1,2,3,4,5,6,0];
+  const pos=orderedDow.indexOf(dow);
+  const d=new Date(mon);d.setDate(mon.getDate()+pos);
+  const todayPos=orderedDow.indexOf(td);
+  const isPast=pos<todayPos;
+  const dayName=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dow];
+  const dateStr=d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+
+  const circle=document.getElementById('sum-circle');
+  circle.className='sum-day-circle '+(isPast?'past':'future');
+  circle.textContent=d.getDate();
+  document.getElementById('sum-title').textContent=`${dayName}, ${dateStr}`;
+  document.getElementById('sum-sub').textContent=isPast?'Past day summary':'Upcoming routine preview';
+
+  const suppSessions=getSupplements(dow),skinSessions=getSkincare(dow);
+  let html='',totalAll=0,doneAll=0;
+
+  const renderSection=(sessions,tab)=>{
+    sessions.forEach(sess=>{
+      html+=`<div class="sum-grp"><div class="sum-grp-lbl">${sess.icon} ${sess.label} <span style="font-size:10px;opacity:.6;text-transform:none;letter-spacing:0;font-weight:400">${sess.sub}</span></div><div class="sum-card">`;
+      sess.items.forEach(item=>{
+        const checked=!!S.checks[ck(dow,tab,item.id)];
+        totalAll++;if(checked)doneAll++;
+        const dotCls=isPast?(checked?'done':'missed'):'upcoming';
+        const nameCls=isPast?(checked?'':'missed'):'upcoming';
+        const icon=isPast?(checked?'✓':'·'):'›';
+        html+=`<div class="sum-row">
+          <div class="sum-dot ${dotCls}">${icon}</div>
+          <div class="sum-row-name ${nameCls}">${item.name}</div>
+          ${isPast&&!checked?'<span style="font-size:10px;color:var(--t4)">missed</span>':''}
+        </div>`;
+      });
+      html+=`</div></div>`;
+    });
+  };
+
+  renderSection(suppSessions,'supplements');
+  renderSection(skinSessions,'skincare');
+
+  if(isPast){
+    const missed=totalAll-doneAll;
+    const pct=totalAll?Math.round(doneAll/totalAll*100):0;
+    html=`<div class="sum-stats">
+      <div class="sum-stat"><div class="sum-stat-num" style="color:var(--green)">${doneAll}</div><div class="sum-stat-lbl">Done</div></div>
+      <div class="sum-stat"><div class="sum-stat-num" style="color:${missed?'var(--red)':'var(--t4)'}">${missed}</div><div class="sum-stat-lbl">Missed</div></div>
+      <div class="sum-stat"><div class="sum-stat-num" style="color:var(--blue)">${pct}%</div><div class="sum-stat-lbl">Complete</div></div>
+    </div>`+html;
+  } else {
+    html=`<div style="margin:0 0 14px;padding:11px 14px;background:var(--blue-d);border-radius:var(--r-lg);display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">📅</span>
+      <span style="font-size:13px;color:var(--blue)">Preview — you can check off items when the day arrives</span>
+    </div>`+html;
+  }
+
+  document.getElementById('sum-body').innerHTML=html;
+  document.getElementById('sum-ov').classList.add('open');
+}
+function closeSummary(){document.getElementById('sum-ov').classList.remove('open');}
+function closeSumBg(e){if(e.target===document.getElementById('sum-ov'))closeSummary();}
+
+function openDetail(dow,tab,itemId){
+  const sessions=tab==='skincare'?getSkincare(+dow):getSupplements(+dow);
+  let item=null;sessions.forEach(s=>s.items.forEach(i=>{if(i.id===itemId)item=i;}));
+  if(!item)return;
+  document.getElementById('ds-title').textContent=item.name;
+  document.getElementById('ds-sub').textContent=item.sub;
+  let body='';
+  // Streak info
+  const streak=getStreak(tab,itemId);
+  if(streak.current>0||streak.best>0){
+    const isBest=streak.current>0&&streak.current>=streak.best&&streak.best>1;
+    body+=`<div class="sh-block" style="background:${isBest?'var(--green-d)':'var(--orange-d)'}">
+      <div class="sh-bicon">${isBest?'★':'🔥'}</div>
+      <div style="flex:1">
+        <div class="sh-blabel">Streak</div>
+        <div style="display:flex;gap:16px;margin-top:2px">
+          <div><div style="font-size:22px;font-weight:700;color:${isBest?'var(--green)':'var(--orange)'};font-family:var(--font-m)">${streak.current}</div><div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Current</div></div>
+          <div><div style="font-size:22px;font-weight:700;color:var(--green);font-family:var(--font-m)">${streak.best}</div><div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Best</div></div>
+        </div>
+      </div>
+    </div>`;
+  }
+  if(item.dur)body+=`<div class="sh-block dur"><div class="sh-bicon">⏱</div><div><div class="sh-blabel">Active duration</div><div class="sh-btext">${item.durLabel}</div></div></div>`;
+  if(item.wait)body+=`<div class="sh-block wt"><div class="sh-bicon">⏳</div><div><div class="sh-blabel">Wait after</div><div class="sh-btext">${item.wait.text} · ${fmtSecs(item.wait.secs)}</div></div></div>`;
+  if(item.note)body+=`<div class="sh-block nt"><div><div class="sh-blabel">How to use</div><div class="sh-note">${item.note}</div></div></div>`;
+  if(item.badges?.length)body+=`<div class="sh-block nt"><div><div class="sh-blabel">Tags</div><div class="sb-badges" style="padding-top:4px">${bh(item.badges)}</div></div></div>`;
+  document.getElementById('ds-body').innerHTML=body;
+  document.getElementById('detail-ov').classList.add('open');
+}
+function closeDetail(){document.getElementById('detail-ov').classList.remove('open');}
+function closeDetailBg(e){if(e.target===document.getElementById('detail-ov'))closeDetail();}
+
+/* SETTINGS SHEET */
+const NC=[
+  {key:'morning',label:'Morning',   icon:'🌅',ibg:'rgba(255,149,0,.15)'},
+  {key:'midday', label:'Midday',    icon:'🌞',ibg:'rgba(0,166,147,.15)'},
+  {key:'evening',label:'Evening',   icon:'🌆',ibg:'rgba(94,92,230,.15)'},
+  {key:'bed',    label:'Before Bed',icon:'🌙',ibg:'rgba(0,122,255,.15)'},
+];
+function openSettings(){renderSettings();document.getElementById('set-ov').classList.add('open');}
+function closeSettings(){document.getElementById('set-ov').classList.remove('open');save();}
+function closeSetBg(e){if(e.target===document.getElementById('set-ov'))closeSettings();}
+
+function renderSettings(){
+  const ns=S.settings.notifs;
+  let html=`
+  <div class="set-sec-lbl">Skincare Timers</div>
+  <div class="set-card">
+    <div class="set-row">
+      <div class="set-row-icon" style="background:rgba(255,149,0,.15)">⏱</div>
+      <div class="set-row-body"><div class="set-row-name">Step Timers</div><div class="set-row-sub">Time each application step with a countdown</div></div>
+      <div class="tog ${S.settings.stepTimers?'on':''}" id="tog-timers" onclick="toggleStepTimers()"><div class="tog-k"></div></div>
+    </div>
+    <div class="set-row">
+      <div class="set-row-icon" style="background:rgba(0,122,255,.15)">🔒</div>
+      <div class="set-row-body"><div class="set-row-name">Sequential Lock</div><div class="set-row-sub">Require each step to complete before the next one unlocks. Works best with Step Timers enabled.</div></div>
+      <div class="tog ${S.settings.seqLock?'on':''}" id="tog-seq" onclick="toggleSeq()"><div class="tog-k"></div></div>
+    </div>
+  </div>
+
+  <div class="set-sec-lbl">Reminders</div>
+  <div class="set-card">`;
+  NC.forEach(c=>{
+    const n=ns[c.key];
+    const maxAttr = c.key==='morning' ? 'max="11:59"' : c.key==='midday' ? 'max="17:59"' : '';
+    html+=`<div class="set-row" style="align-items:center">
+      <div class="set-row-icon" style="background:${c.ibg}">${c.icon}</div>
+      <div class="set-row-body">
+        <div class="set-row-name">${c.label}</div>
+        <input type="time" class="set-time-input" value="${n.time}" ${maxAttr}
+          style="margin-top:4px;width:auto;font-size:13px;padding:4px 10px;border-radius:7px"
+          onchange="setNotifTime('${c.key}',this.value)">
+      </div>
+      <div class="tog ${n.on?'on':''}" id="tog_n_${c.key}" onclick="togNotif('${c.key}')"><div class="tog-k"></div></div>
+    </div>`;
+  });
+  html+=`</div>
+
+  <div class="set-sec-lbl">Data</div>
+  <div class="set-card">
+    <div class="set-row">
+      <div class="set-row-icon" style="background:rgba(175,82,222,.15)">🧪</div>
+      <div class="set-row-body"><div class="set-row-name">Test Mode</div><div class="set-row-sub">Unlock all days for interaction. Reset buttons appear on each day in the strip.</div></div>
+      <div class="tog ${S.settings.testMode?'on':''}" id="tog-test" onclick="toggleTestMode()"><div class="tog-k"></div></div>
+    </div>
+    <div class="set-row" style="cursor:pointer" onclick="resetToday()">
+      <div class="set-row-icon" style="background:rgba(255,59,48,.12)">🔄</div>
+      <div class="set-row-body"><div class="set-row-name" style="color:var(--red)">Reset Today</div><div class="set-row-sub">Clear all of today's check-offs</div></div>
+    </div>
+  </div>
+  <div style="height:10px"></div>`;
+  document.getElementById('set-body').innerHTML=html;
+}
+
+function resetToday(){
+  resetDay(todayDow());
+  closeSettings();
+  showToast('Today reset');
+}
+
+function resetDay(dow){
+  const wk=weekKey();
+  // Rewind streaks for any item that was checked on this day
+  const dateStr=dateStrFromDow(dow);
+  Object.keys(S.streaks).forEach(key=>{
+    const s=S.streaks[key];
+    if(s.lastDate===dateStr){
+      const newCurrent=Math.max(0,s.current-1);
+      const yesterday=new Date(dateStr);yesterday.setDate(yesterday.getDate()-1);
+      const yStr=`${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+      S.streaks[key]={current:newCurrent,best:s.best,lastDate:newCurrent>0?yStr:null};
+    }
+  });
+  Object.keys(S.checks).forEach(k=>{
+    if(k.startsWith(`${wk}_${dow}_`))delete S.checks[k];
+  });
+  flushTimers(dow,'supplements');
+  flushTimers(dow,'skincare');
+  save();
+  if(S.dow===dow) renderList();
+  renderDayStrip();
+  showToast(`${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dow]} reset`);
+}
+
+function toggleTestMode(){
+  S.settings.testMode=!S.settings.testMode;
+  const el=document.getElementById('tog-test');
+  if(el)el.classList.toggle('on',S.settings.testMode);
+  // If turning off, snap back to today
+  if(!S.settings.testMode){S.dow=todayDow();}
+  save();renderDayStrip();renderList();
+  showToast(S.settings.testMode?'🧪 Test mode on':'Test mode off');
+}
+
+function toggleStepTimers(){
+  S.settings.stepTimers=!S.settings.stepTimers;
+  const el=document.getElementById('tog-timers');if(el)el.classList.toggle('on',S.settings.stepTimers);
+  flushTimers(S.dow,S.tab);
+  renderList();save();
+}
+function toggleSeq(){
+  S.settings.seqLock=!S.settings.seqLock;
+  const el=document.getElementById('tog-seq');if(el)el.classList.toggle('on',S.settings.seqLock);
+  // Flush and re-render
+  flushTimers(S.dow,S.tab);
+  renderList();save();
+}
+function togNotif(key){
+  S.settings.notifs[key].on=!S.settings.notifs[key].on;save();
+  const el=document.getElementById('tog_n_'+key);if(el)el.classList.toggle('on',S.settings.notifs[key].on);
+}
+function setNotifTime(key,val){
+  // Enforce caps: morning ≤ 11:59, midday ≤ 17:59
+  if(key==='morning'&&val>='12:00') val='11:59';
+  if(key==='midday'&&val>='18:00') val='17:59';
+  S.settings.notifs[key].time=val;save();
+}
+function fmt12(t){const[h,m]=t.split(':').map(Number);return `${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;}
+
+/* Notifications */
+const nTimers={};
+function scheduleNotifs(){
+  Object.values(nTimers).forEach(id=>clearTimeout(id));
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  const msgs={morning:'Morning supplements & skincare 🌅',midday:'Midday supplements 🌞',evening:'Evening supplements & PM routine 🌆',bed:'Before-bed routine 🌙'};
+  NC.forEach(c=>{
+    if(!S.settings.notifs[c.key].on)return;
+    const[h,m]=S.settings.notifs[c.key].time.split(':').map(Number);
+    const next=new Date();next.setHours(h,m,0,0);
+    if(next<=new Date())next.setDate(next.getDate()+1);
+    nTimers[c.key]=setTimeout(()=>{
+      new Notification('Daily Rack',{body:msgs[c.key]});
+      setInterval(()=>{if(S.settings.notifs[c.key].on)new Notification('Daily Rack',{body:msgs[c.key]});},86400000);
+    },next-new Date());
+  });
+}
+
+/* Toast */
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* INIT */
+function init(){
+  load();prune();
+  S.dow=todayDow();
+  applyTheme();
+  renderDayStrip();renderList();
+  if('Notification' in window&&Notification.permission==='granted')scheduleNotifs();
+}
+document.addEventListener('DOMContentLoaded',init);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){prune();renderDayStrip();}});
+</script>
+</body>
+</html>
